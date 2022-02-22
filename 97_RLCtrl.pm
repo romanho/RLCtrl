@@ -34,7 +34,6 @@ my %RLCtrl_defattrs = (
 	widgetOverride => "dim:colorpicker,BRI,0,1,100 coltemp:colorpicker,CT,2700,100,5000",
 );
 	
-# scenes ...
 my $RLC_def_coltemp = 3850;
 my $RLC_starttime;
 
@@ -133,7 +132,6 @@ sub RLCtrl_Set($@)
 	my ($hash, $name, $cmd, @args) = @_;
 	my $new_bri;
 
-	# on, off, toggle, auto, dimUp/Down, <0..100>: brightness, scene_name
 	if ($cmd eq "on") {
 		return RLCtrl_manbri($hash, 100);
 	}
