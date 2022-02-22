@@ -129,8 +129,19 @@ sub RLCtrl_Notify($$)
 
 sub RLCtrl_Set($@)
 {
-	my ($hash, $name, $cmd, @args) = @_;
+	my ($hash, $name, @cmd) = @_;
+	while(@cmd) {
+		my $msg = RLCtrl_Set_single($hash, $name, \@cmd);
+		return $msg if defined($msg);
+	}
+	return undef;
+}
+
+sub RLCtrl_Set_single($@)
+{
+	my ($hash, $name, $args) = @_;
 	my $new_bri;
+	my $cmd = shift @$args;
 
 	if ($cmd eq "on") {
 		return RLCtrl_manbri($hash, 100);
@@ -144,47 +155,49 @@ sub RLCtrl_Set($@)
 		return RLCtrl_manbri($hash, $bri > 0 ? 0 : 100);
 	}
 	elsif ($cmd eq "dimUp") {
-		my $d = ($args[0] =~ /^\d+$/) ? $args[0] : 10;
+		my $d = (@$args && $args->[0] =~ /^\d+$/) ? shift @$args : 10;
 		return RLCtrl_manbri($hash, $d, 1);
 	}
 	elsif ($cmd eq "dimDown") {
-		my $d = ($args[0] =~ /^\d+$/) ? $args[0] : 10;
+		my $d = (@$args && $args->[0] =~ /^\d+$/) ? shift @$args : 10;
 		return RLCtrl_manbri($hash, -$d, 1);
 	}
 	elsif ($cmd =~ /^(dim)?(\d+)/) {
 		return RLCtrl_manbri($hash, $2);
 	}
 	elsif ($cmd eq "dim" || $cmd eq "pct") {
-		return "set $name $cmd needs a numeric argument" if $args[0] !~ /^\d+$/;
-		return RLCtrl_manbri($hash, $args[0]);
+		return "set $name $cmd needs a numeric argument"
+			if !@$args || $args->[0] !~ /^\d+$/;
+		return RLCtrl_manbri($hash, shift @$args);
 	}
 	elsif ($cmd eq "auto") {
 		RLCtrl_auto($hash);
 		return undef;
 	}
 	elsif ($cmd eq "for") {
-		return "set $name for needs a numeric argument" if $args[0] !~ /^\d+$/;
-		RLCtrl_auto_after_timer($hash, $args[0]);
-		return undef;
+		return "set $name for needs a numeric argument"
+			if !@$args || $args->[0] !~ /^\d+$/;
+		return RLCtrl_auto_after_timer($hash, shift @$args);
 	}
 	elsif ($cmd eq "ct" || $cmd eq "coltemp") {
-		if ($args[0] eq "auto") {
+		if (@$args && $args->[0] eq "auto") {
 			$hash->{MAN_CT} = undef;
 		}
-		elsif ($args[0] =~ /^\d+$/) {
-			$hash->{MAN_CT} = $args[0];
+		elsif (@$args && $args->[0] =~ /^\d+$/) {
+			$hash->{MAN_CT} = $args->[0];
 		}
 		else {
 			return "set $name ct needs a numeric argument or \"auto\"";
 		}
+		shift @$args;
 		RLCtrl_exec($hash);
 		return undef;
 	}
 	elsif ($cmd eq "scene") {
-		my $name = shift @args;
+		my $name = shift @$args;
 		return "set $name scene needs an scene name" if !$name;
-		if ($args[1]) {
-			$hash->{SCENES}{$name} = join(" ", @args);
+		if (@$args && $args->[0]) {
+			$hash->{SCENES}{$name} = join(" ", @$args);
 		}
 		else {
 			delete $hash->{SCENES}{$name};
