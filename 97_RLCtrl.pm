@@ -122,9 +122,6 @@ sub RLCtrl_Notify($$)
 			RLCtrl_exec($hash);
 		}
 	}
-	else {
-		Log3($name, 5, "RLC($name): event from unrelated device '$fromdev->{NAME}' ?!?");
-	}
 }
 
 sub RLCtrl_Set($@)
@@ -143,6 +140,7 @@ sub RLCtrl_Set_single($@)
 	my $new_bri;
 	my $cmd = shift @$args;
 
+	Log3($name, 5, "RLC($name): set $cmd @$args") if $cmd ne "?";
 	if ($cmd eq "on") {
 		return RLCtrl_manbri($hash, 100);
 	}
@@ -258,6 +256,7 @@ sub RLCtrl_Get($@)
 	my ($hash, $name, $opt, @args) = @_;
 	return "$name: get needs at least one arg" if !defined($opt);
 
+	Log3($name, 5, "RLC($name): get $opt @args");
 	# Readings:
 	# ---------
 	# status
