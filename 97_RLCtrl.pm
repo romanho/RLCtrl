@@ -151,7 +151,7 @@ sub RLCtrl_Set_single($@)
 	}
 	elsif ($cmd eq "toggle") {
 		# TODO: maybe store previous brightness
-		my $bri = ReadingsVal($name, "brightness", 0);
+		my $bri = ReadingsVal($name, "pct", 0);
 		return RLCtrl_manbri($hash, $bri > 0 ? 0 : 100);
 	}
 	elsif ($cmd eq "dimUp") {
@@ -227,7 +227,7 @@ sub RLCtrl_manbri($$;$)
 	my $name = $hash->{NAME};
 
 	if ($rel) {
-		my $obri = ReadingsVal($hash->{NAME}, "brightness", 0);
+		my $obri = ReadingsVal($hash->{NAME}, "pct", 0);
 		$bri = $obri + $bri;
 	}
 	
@@ -268,10 +268,10 @@ sub RLCtrl_Get($@)
 		return $hash->{PRESENCE};
 	}
 	if ($opt eq "dim" || $opt eq "pct") {
-		return ReadingsVal($name, "brightness", 0);
+		return ReadingsVal($name, "pct", 0);
 	}
 	if ($opt eq "ct" || $opt eq "coltemp") {
-		return ReadingsVal($name, "coltemp", 0);
+		return ReadingsVal($name, "ct", 0);
 	}
 
 	return "Unknown argument $opt, choose one of presence dim coltemp";
@@ -368,12 +368,13 @@ sub RLCtrl_doset($$$$)
 		if $ldev;
 
 	my $state = "Dim $bri, CT $ct ($msg)";
-	my $pbri = ReadingsVal($name, "brightness", 0);
+	my $pbri = ReadingsVal($name, "pct", 0);
 	$hash->{STATE} = $state;
 	readingsBeginUpdate($hash);
 	readingsBulkUpdate($hash, "state", $state);
-	readingsBulkUpdate($hash, "prevBrightness", $pbri);
-	readingsBulkUpdate($hash, "brightness", $bri);
+	readingsBulkUpdate($hash, "mode", $hash->{MODE});
+	readingsBulkUpdate($hash, "prevpct", $pbri);
+	readingsBulkUpdate($hash, "pct", $bri);
 	readingsBulkUpdate($hash, "ct", $ct);
 	readingsEndUpdate($hash, 1);
 	Log3($name, 4, "RLC($name): doset bri=$bri ct=$ct");
@@ -456,8 +457,8 @@ sub RLCtrl_corrlux($$$$)
 							 RLCattr($name, "lightReading"),
 							 0);
 	my $factor = RLCattr($name, "lightFeedback");
-	my $age = ReadingsAge($name, "prevBrightness", 0);
-	my $bri = ReadingsVal($name, $age<10 ? "prevBrightness" : "brightness", 0);
+	my $age = ReadingsAge($name, "prevpct", 0);
+	my $bri = ReadingsVal($name, $age<10 ? "prevpct" : "pct", 0);
 	my $corr = POSIX::floor($rawlux*$factor*$bri/100 + 0.5);
 	my $clux = $rawlux - $corr;
 	Log3($name, 4, sprintf "RLC($name): corrlux: ".
@@ -542,7 +543,7 @@ sub RLCtrl_autoTimer($)
 sub RLCtrl_stateicon($) {
 	my $hash = $defs{$_[0]};
 	return ".*:time_automatic:on" if $hash->{MODE} eq "auto";
-	return ".*:light_light_dim_00:auto" if ReadingsVal($hash->{NAME}, "brightness", 0) == 0;
+	return ".*:light_light_dim_00:auto" if ReadingsVal($hash->{NAME}, "pct", 0) == 0;
 	my $v = sprintf("%02d", int(($hash->{MAN_BRI}/10.0)+0.5)*10);
 	my $c = CommandGet("","$hash->{LIGHTDEV} rgb");
 	return ".*:light_light_dim_$v\@#$c:off";
