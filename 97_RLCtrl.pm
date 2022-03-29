@@ -273,8 +273,10 @@ sub RLCtrl_Get($@)
 	if ($opt eq "ct" || $opt eq "coltemp") {
 		return ReadingsVal($name, "ct", 0);
 	}
-
-	return "Unknown argument $opt, choose one of presence dim coltemp";
+	if ($opt eq "mode") {
+		return $hash->{MODE};
+	}
+	return "Unknown argument $opt, choose one of mode presence dim coltemp";
 }
 
 sub RLCtrl_Attr($@)
