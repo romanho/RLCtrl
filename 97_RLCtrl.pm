@@ -232,6 +232,7 @@ sub RLCtrl_manbri($$;$)
 	$hash->{MODE} = "manual";
 	$hash->{MODECHANGE} = time();
 	$hash->{MAN_BRI} = $bri < 0 ? 0 : $bri > 100 ? 100 : $bri;
+	$hash->{PRESENCE} = 0 if $bri <= 0;
 	Log3($name, 3, "RLC($name): manual set bri=$bri");
 	RLCtrl_exec($hash);
 	RLCtrl_auto_after_timer($hash);
