@@ -404,7 +404,7 @@ sub RLCtrl_in_time($$)
 }
 
 # define a color temperature based on time
-sub RLCtrl_coltemp($$)
+sub RLCtrl_coltemp($)
 {
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
@@ -449,7 +449,7 @@ sub RLCtrl_coltemp($$)
 }
 
 # correct lux value from (Aqara) light sensors if lights are on (feedback!)
-sub RLCtrl_corrlux($$$$)
+sub RLCtrl_corrlux($$)
 {
 	my ($hash, $devlux) = @_;
 	my $name = $hash->{NAME};
