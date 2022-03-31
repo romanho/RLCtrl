@@ -104,11 +104,14 @@ sub RColor_start($)
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
 
+	return if $hash->{PHASE} ne "off";
+	
 	my $dow = (localtime(time))[6];
-	my $h = $dow * 32768/7;
-	$hash->{HUE1} = $h;
-	$hash->{HUE2} = $h + 32768;
+	my $h = $dow/7/2;
+	$hash->{COL1} = $h;
+	$hash->{COL2} = $h + 0.5;
 	$hash->{PHASE} = 0;
+Log3($name, 5, "RCo($name): turned on");
 	RColor_switch($hash);
 }
 
@@ -138,10 +141,15 @@ sub RColor_switch($)
 	$hash->{PHASE} = ($hash->{PHASE}+1) % 2;
 	my $l1 = $ph+1;
 	my $l2 = $ph+2; $l2 = 1 if $l2 > 2;
-
+	my $dev1 = $hash->{"LIGHT$l1"};
+	my $dev2 = $hash->{"LIGHT$l2"};
+	# XXX: set v depending on light level?
+	my $col1 = Color::hsv2hex($hash->{COL1}, 1.0, 0.3);
+	my $col2 = Color::hsv2hex($hash->{COL2}, 1.0, 0.3);
+	
 	$hash->{STATE} = "alternating ($ph)";
-	fhem("set $hash->{LIGHT$l1} hue $hash->{HUE1} $ttime");
-	fhem("set $hash->{LIGHT$l2} hue $hash->{HUE2} $ttime");
+	fhem("set $dev1 rgb $col1 $ttime");
+	fhem("set $dev2 rgb $col2 $ttime");
 	RemoveInternalTimer($hash, "RColor_switch");
 	InternalTimer(gettimeofday() + $ktime, "RLColor_switch", $hash);
 Log3($name, 5, "RCo($name): switched, next ".FmtDateTime(gettimeofday() + $ktime));
