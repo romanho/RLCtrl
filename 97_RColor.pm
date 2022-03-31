@@ -34,10 +34,12 @@ sub RColor_Define($$)
 	my ($name, $type, $ldev1, $ldev2) = @args;
 
 	$hash->{STATE} = 'initialized';
+	$hash->{PHASE} = "off";
 	$hash->{LIGHT1} = $ldev1;
 	$hash->{LIGHT2} = $ldev2;
 
-#	InternalTimer(gettimeofday() + RLCattr($name, "keeptime"),
+	# XXX: start timer (or turn it on, depending on time?)
+#	InternalTimer(gettimeofday() + RCattr($name, "keeptime"),
 #				  "RLCintervalCheck", $hash);
 	return undef;
 }
@@ -116,11 +118,13 @@ sub RColor_stop($)
 	my $name = $hash->{NAME};
 	
 	RemoveInternalTimer($hash, "RColor_switch");
+	return if $hash->{PHASE} eq "off";
 
 	my $next = sunset(-600);
 	RemoveInternalTimer($hash, "RColor_on");
 	InternalTimer($next, "RLColor_on", $hash);
 	$hash->{STATE} = "off (next: ".FmtDateTime($next).")";
+Log3($name, 5, "RCo($name): turned off, on at ".FmtDateTime(gettimeofday() + $ktime));
 }
 
 sub RColor_switch($)
@@ -140,6 +144,7 @@ sub RColor_switch($)
 	fhem("set $hash->{LIGHT$l2} hue $hash->{HUE2} $ttime");
 	RemoveInternalTimer($hash, "RColor_switch");
 	InternalTimer(gettimeofday() + $ktime, "RLColor_switch", $hash);
+Log3($name, 5, "RCo($name): switched, next ".FmtDateTime(gettimeofday() + $ktime));
 }
 
 sub RCattr($$)
