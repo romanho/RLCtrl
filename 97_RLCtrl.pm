@@ -137,7 +137,6 @@ sub RLCtrl_Set($@)
 sub RLCtrl_Set_single($@)
 {
 	my ($hash, $name, $args) = @_;
-	my $new_bri;
 	my $cmd = shift @$args;
 
 	Log3($name, 5, "RLC($name): set $cmd @$args") if $cmd ne "?";
