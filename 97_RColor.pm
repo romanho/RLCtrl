@@ -11,7 +11,7 @@ use Color;
 my %RColor_attrs = (
 	keeptime		=> { type=>"u", dflt=> 300 },
 	transitiontime	=> { type=>"u", dflt=> 10 },
-};
+);
 
 sub RColor_Initialize($)
 {
@@ -55,10 +55,12 @@ sub RColor_Set($@)
 	my ($hash, $name, $cmd, @args) = @_;
 
 	if ($cmd eq "on") {
-		RColor_start();
+		RColor_start($hash);
+		return undef;
 	}
 	elsif ($cmd eq "off") {
-		RColor_stop();
+		RColor_stop($hash);
+		return undef;
 	}	
 	# usage for GUI:
 	return "Unknown argument $cmd, choose one of on off";
@@ -126,8 +128,8 @@ sub RColor_switch($)
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
 
-	my $ttime = RLCattr($name, "transitiontime");
-	my $ktime = RLCattr($name, "keeptime");
+	my $ttime = RCattr($name, "transitiontime");
+	my $ktime = RCattr($name, "keeptime");
 	my $ph = $hash->{PHASE};
 	$hash->{PHASE} = ($hash->{PHASE}+1) % 2;
 	my $l1 = $ph+1;
@@ -140,7 +142,7 @@ sub RColor_switch($)
 	InternalTimer(gettimeofday() + $ktime, "RLColor_switch", $hash);
 }
 
-sub RLCattr($$)
+sub RCattr($$)
 {
 	my ($name, $aname) = @_;
 
