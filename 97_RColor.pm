@@ -43,9 +43,9 @@ sub RColor_Define($$)
 	my @args = split("[ \t]+", $def);
 
 	return "Usage: define <name> RColor <light1> <light2>"  if(@args < 4);
-	my ($name, $type, $ldev1, $ldev2) = @args;
+	my ($name, $type, $ldev0, $ldev1) = @args;
+	$hash->{LIGHT0} = $ldev0;
 	$hash->{LIGHT1} = $ldev1;
-	$hash->{LIGHT2} = $ldev2;
 	RColor_init($hash);
 	return undef;
 }
@@ -170,8 +170,8 @@ sub RColor_off($)
 	my $name = $hash->{NAME};
 
 	$hash->{PHASE} = "off";
+	fhem("set $hash->{LIGHT0} off");
 	fhem("set $hash->{LIGHT1} off");
-	fhem("set $hash->{LIGHT2} off");
 	Log3($name, 3, "RCo($name): turned off");
 }
 
@@ -199,8 +199,8 @@ sub RColor_switch($)
 
 	my $ph = $hash->{PHASE};
 	$hash->{PHASE} = ($hash->{PHASE}+1) % 2;
-	my $l1 = $ph + 1;
-	my $l2 = ($ph+1)%2 + 1;
+	my $l1 = $ph;
+	my $l2 = ($ph+1)%2;
 	my $dev1 = $hash->{"LIGHT$l1"};
 	my $dev2 = $hash->{"LIGHT$l2"};
 	my $max_pct = RCattr($name, "max_pct");
