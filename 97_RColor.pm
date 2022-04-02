@@ -134,12 +134,13 @@ sub RColor_start($)
 	return if $hash->{PHASE} ne "off";
 	
 	my $dow = (localtime(time))[6];
-	my $h = $dow/7/2;
+	my $hue = (3.0*$dow/7 * 65536) % 32768;
+	$hue /= 65536;
 	my $mn_off = RCattr($name, "midnight_offset");
 	my $max_pct = RCattr($name, "max_pct");
 
-	$hash->{COL1} = $h;
-	$hash->{COL2} = $h + 0.5;
+	$hash->{COL1} = $hue ;
+	$hash->{COL2} = $hue + 0.5;
 	$hash->{PHASE} = 0;
 
 	my @t = localtime(time);
@@ -147,7 +148,8 @@ sub RColor_start($)
 	$hash->{PCTFACTOR} = $max_pct / $minutes_on;
 	$hash->{STARTTIME} = time;
 	
-	Log3($name, 4, "RCo($name): turned on");
+	Log3($name, 4, sprintf "RCo($name): turned on, hues: %d %d",
+		 int($hash->{COL1}*65536), int($hash->{COL2}*65536));
 	
 	RColor_switch($hash);
 }
@@ -194,9 +196,6 @@ sub RColor_switch($)
 	my ($hash) = @_;
 	my $name = $hash->{NAME};
 
-	my $ttime = RCattr($name, "transitiontime");
-	my $ktime = RCattr($name, "keeptime");
-
 	my $ph = $hash->{PHASE};
 	$hash->{PHASE} = ($hash->{PHASE}+1) % 2;
 	my $l1 = $ph;
@@ -204,17 +203,21 @@ sub RColor_switch($)
 	my $dev1 = $hash->{"LIGHT$l1"};
 	my $dev2 = $hash->{"LIGHT$l2"};
 	my $max_pct = RCattr($name, "max_pct");
-	my $pct = $max_pct - (time - $hash->{STARTTIME})*$hash->{PCTFACTOR};
-
+	my $pct = $max_pct - int((time - $hash->{STARTTIME})*$hash->{PCTFACTOR});
 	return RColor_stop($hash) if ($pct < 1);
 
-	my $col1 = Color::hsv2hex($hash->{COL1}, 1.0, $pct/100);
-	my $col2 = Color::hsv2hex($hash->{COL2}, 1.0, $pct/100);
-	Log3($name, 4, "RCo($name): ph=$ph pct=$pct, c1=$col1 c2=$col2");
+	my $col1 = int($hash->{COL1} * 65536);
+	my $col2 = int($hash->{COL2} * 65536);
+	Log3($name, 4, "RCo($name): ph=$ph dev1=$dev1 dev2=$dev2 pct=$pct");
+
+	my $ttime = RCattr($name, "transitiontime");
+	my $ktime = RCattr($name, "keeptime");
 
 	$hash->{STATE} = "alternating ($ph)";
-	fhem("set $dev1 rgb $col1 $ttime");
-	fhem("set $dev2 rgb $col2 $ttime");
+	fhem("set $dev1 pct $pct : hue $col1 $ttime");
+	fhem("set $dev2 pct $pct : hue $col2 $ttime");
+	Log3($name, 5, "RCo($name): set $dev1 pct $pct : hue $col1 $ttime");
+	Log3($name, 5, "RCo($name): set $dev2 pct $pct : hue $col2 $ttime");
 	RemoveInternalTimer($hash, "RColor_switch");
 	InternalTimer(gettimeofday() + $ktime, "RColor_switch", $hash);
 	Log3($name, 4, "RCo($name): switched, next ".FmtDateTime(gettimeofday() + $ktime));
