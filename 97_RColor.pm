@@ -32,15 +32,9 @@ sub RColor_Define($$)
 
 	return "Usage: define <name> RColor <light1> <light2>"  if(@args < 4);
 	my ($name, $type, $ldev1, $ldev2) = @args;
-
-	$hash->{STATE} = 'initialized';
-	$hash->{PHASE} = "off";
 	$hash->{LIGHT1} = $ldev1;
 	$hash->{LIGHT2} = $ldev2;
-
-	# XXX: start timer (or turn it on, depending on time?)
-#	InternalTimer(gettimeofday() + RCattr($name, "keeptime"),
-#				  "RLCintervalCheck", $hash);
+	RColor_init($hash);
 	return undef;
 }
 
@@ -64,8 +58,12 @@ sub RColor_Set($@)
 		RColor_stop($hash);
 		return undef;
 	}	
+	elsif ($cmd eq "reset") {
+		RColor_init($hash);
+		return undef;
+	}
 	# usage for GUI:
-	return "Unknown argument $cmd, choose one of on off";
+	return "Unknown argument $cmd, choose one of on off reset";
 }
 
 sub RColor_Attr($@)
@@ -97,7 +95,24 @@ sub RColor_Attr($@)
 	return undef;
 }
 
+sub RColor_init($)
+{
+	my ($hash) = @_;
+	my $name = $hash->{NAME};
 
+	$hash->{STATE} = 'initialized';
+	RColor_off($hash);
+
+	my $ss_off = RCattr($name, "sunset_offset");
+	my @t = localtime(time);
+	my $t = sprintf("%02d:%02d:%02d", $t[2], $t[1], $t[0]);
+	if ($t lt sunset_abs($ss_off)) {
+		RColor_set_sunset_timer($hash);
+	}
+	else {
+		RColor_start($hash);
+	}
+}
 
 sub RColor_start($)
 {
@@ -123,13 +138,35 @@ sub RColor_stop($)
 	RemoveInternalTimer($hash, "RColor_switch");
 	return if $hash->{PHASE} eq "off";
 
-	my $next = sunset(-600);
-	RemoveInternalTimer($hash, "RColor_on");
-	InternalTimer($next, "RLColor_on", $hash);
-	$hash->{STATE} = "off (next: ".FmtDateTime($next).")";
-Log3($name, 5, "RCo($name): turned off, on at ".FmtDateTime(gettimeofday() + $ktime));
+	RColor_off($hash);
+	RColor_set_sunset_timer($hash);
 }
 
+sub RColor_off($)
+{
+	my ($hash) = @_;
+	my $name = $hash->{NAME};
+
+	$hash->{PHASE} = "off";
+	fhem("set $hash->{LIGHT1} off");
+	fhem("set $hash->{LIGHT2} off");
+	Log3($name, 3, "RCo($name): turned off");
+}
+
+sub RColor_set_sunset_timer($)
+{
+	my ($hash) = @_;
+	my $name = $hash->{NAME};
+	
+	my $ss_off = RCattr($name, "sunset_offset");
+	my $next = gettimeofday() + hms2h(sunset_rel($ss_off))*3600;
+
+	RemoveInternalTimer($hash, "RColor_start");
+	InternalTimer($next, "RColor_start", $hash);
+	$hash->{STATE} = "off (next: ".FmtDateTime($next).")";
+	Log3($name, 4, "RCo($name): set on timer for ".FmtDateTime($next));
+}
+	
 sub RColor_switch($)
 {
 	my ($hash) = @_;
