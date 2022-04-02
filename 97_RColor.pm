@@ -1,4 +1,11 @@
 # $Id: $
+#
+# RColor: special hack that sets up two RGB lights in complementary color
+# The two lights swap their colors regularily.
+# They start at 'sunset_offset' after sunset each day (or before, if
+# negative), and are on until midnight_offset after midnight (or before,
+# again)
+#
 
 package main;
 
@@ -11,7 +18,12 @@ use Color;
 my %RColor_attrs = (
 	keeptime		=> { type=>"u", dflt=> 300 },
 	transitiontime	=> { type=>"u", dflt=> 10 },
+	max_pct			=> { type=>"%", dflt=> 100 },
+	sunset_offset   => { type=>"i", dflt=> -30*60 },
+	midnight_offset => { type=>"i", dflt=> -10*60 },
 );
+
+my $RColor_sunset_offset = -30*60;
 
 sub RColor_Initialize($)
 {
@@ -123,10 +135,20 @@ sub RColor_start($)
 	
 	my $dow = (localtime(time))[6];
 	my $h = $dow/7/2;
+	my $mn_off = RCattr($name, "midnight_offset");
+	my $max_pct = RCattr($name, "max_pct");
+
 	$hash->{COL1} = $h;
 	$hash->{COL2} = $h + 0.5;
 	$hash->{PHASE} = 0;
-Log3($name, 5, "RCo($name): turned on");
+
+	my @t = localtime(time);
+	my $minutes_on = (24-$t[2])*3600 + (60-$t[1])*60 + (60-$t[0]) + $mn_off;
+	$hash->{PCTFACTOR} = $max_pct / $minutes_on;
+	$hash->{STARTTIME} = time;
+	
+	Log3($name, 4, "RCo($name): turned on");
+	
 	RColor_switch($hash);
 }
 
@@ -174,22 +196,28 @@ sub RColor_switch($)
 
 	my $ttime = RCattr($name, "transitiontime");
 	my $ktime = RCattr($name, "keeptime");
+
 	my $ph = $hash->{PHASE};
 	$hash->{PHASE} = ($hash->{PHASE}+1) % 2;
-	my $l1 = $ph+1;
-	my $l2 = $ph+2; $l2 = 1 if $l2 > 2;
+	my $l1 = $ph + 1;
+	my $l2 = ($ph+1)%2 + 1;
 	my $dev1 = $hash->{"LIGHT$l1"};
 	my $dev2 = $hash->{"LIGHT$l2"};
-	# XXX: set v depending on light level?
-	my $col1 = Color::hsv2hex($hash->{COL1}, 1.0, 0.3);
-	my $col2 = Color::hsv2hex($hash->{COL2}, 1.0, 0.3);
-	
+	my $max_pct = RCattr($name, "max_pct");
+	my $pct = $max_pct - (time - $hash->{STARTTIME})*$hash->{PCTFACTOR};
+
+	return RColor_stop($hash) if ($pct < 1);
+
+	my $col1 = Color::hsv2hex($hash->{COL1}, 1.0, $pct/100);
+	my $col2 = Color::hsv2hex($hash->{COL2}, 1.0, $pct/100);
+	Log3($name, 4, "RCo($name): ph=$ph pct=$pct, c1=$col1 c2=$col2");
+
 	$hash->{STATE} = "alternating ($ph)";
 	fhem("set $dev1 rgb $col1 $ttime");
 	fhem("set $dev2 rgb $col2 $ttime");
 	RemoveInternalTimer($hash, "RColor_switch");
-	InternalTimer(gettimeofday() + $ktime, "RLColor_switch", $hash);
-Log3($name, 5, "RCo($name): switched, next ".FmtDateTime(gettimeofday() + $ktime));
+	InternalTimer(gettimeofday() + $ktime, "RColor_switch", $hash);
+	Log3($name, 4, "RCo($name): switched, next ".FmtDateTime(gettimeofday() + $ktime));
 }
 
 sub RCattr($$)
