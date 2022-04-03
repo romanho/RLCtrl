@@ -18,7 +18,7 @@ use Color;
 my %RColor_attrs = (
 	keeptime		=> { type=>"u", dflt=> 300 },
 	transitiontime	=> { type=>"u", dflt=> 10 },
-	max_pct			=> { type=>"%", dflt=> 100 },
+	max_bri			=> { type=>"%", dflt=> 255 },
 	sunset_offset   => { type=>"i", dflt=> -30*60 },
 	midnight_offset => { type=>"i", dflt=> -10*60 },
 );
@@ -137,7 +137,7 @@ sub RColor_start($)
 	my $hue = (3.0*$dow/7 * 65536) % 32768;
 	$hue /= 65536;
 	my $mn_off = RCattr($name, "midnight_offset");
-	my $max_pct = RCattr($name, "max_pct");
+	my $max_bri = RCattr($name, "max_bri");
 
 	$hash->{COL1} = $hue ;
 	$hash->{COL2} = $hue + 0.5;
@@ -145,7 +145,7 @@ sub RColor_start($)
 
 	my @t = localtime(time);
 	my $minutes_on = (24-$t[2])*3600 + (60-$t[1])*60 + (60-$t[0]) + $mn_off;
-	$hash->{PCTFACTOR} = $max_pct / $minutes_on;
+	$hash->{BRIFACTOR} = $max_bri / $minutes_on;
 	$hash->{STARTTIME} = time;
 	
 	Log3($name, 4, sprintf "RCo($name): turned on, hues: %d %d",
@@ -202,13 +202,13 @@ sub RColor_switch($)
 	my $l2 = ($ph+1)%2;
 	my $dev1 = $hash->{"LIGHT$l1"};
 	my $dev2 = $hash->{"LIGHT$l2"};
-	my $max_pct = RCattr($name, "max_pct");
-	my $pct = $max_pct - int((time - $hash->{STARTTIME})*$hash->{PCTFACTOR});
-	return RColor_stop($hash) if ($pct < 1);
+	my $max_bri = RCattr($name, "max_bri");
+	my $bri = $max_bri - int((time - $hash->{STARTTIME})*$hash->{BRIFACTOR});
+	return RColor_stop($hash) if ($bri < 1);
 
 	my $col1 = int($hash->{COL1} * 65536);
 	my $col2 = int($hash->{COL2} * 65536);
-	Log3($name, 4, "RCo($name): ph=$ph dev1=$dev1 dev2=$dev2 pct=$pct");
+	Log3($name, 4, "RCo($name): ph=$ph bri=$bri");
 
 	my $ttime = RCattr($name, "transitiontime");
 	my $ktime = RCattr($name, "keeptime");
