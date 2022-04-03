@@ -197,27 +197,29 @@ sub RColor_switch($)
 	my $name = $hash->{NAME};
 
 	my $ph = $hash->{PHASE};
-	$hash->{PHASE} = ($hash->{PHASE}+1) % 2;
-	my $l1 = $ph;
-	my $l2 = ($ph+1)%2;
-	my $dev1 = $hash->{"LIGHT$l1"};
-	my $dev2 = $hash->{"LIGHT$l2"};
+	my $np = ($ph+1) % 2;
+	$hash->{PHASE} = $np;
 	my $max_bri = RCattr($name, "max_bri");
 	my $bri = $max_bri - int((time - $hash->{STARTTIME})*$hash->{BRIFACTOR});
 	return RColor_stop($hash) if ($bri < 1);
 
-	my $col1 = int($hash->{COL1} * 65536);
-	my $col2 = int($hash->{COL2} * 65536);
+	my $hue1 = int($hash->{COL1} * 256);
+	my $hue2 = int($hash->{COL2} * 256);
 	Log3($name, 4, "RCo($name): ph=$ph bri=$bri");
 
 	my $ttime = RCattr($name, "transitiontime") * 10;
 	my $ktime = RCattr($name, "keeptime");
+	my $cmd1 = sprintf "set %s hsv %02x%02x%02x $ttime",
+		$hash->{"LIGHT$ph"}, $hue1,255,$bri;
+	my $cmd2 = sprintf "set %s hsv %02x%02x%02x $ttime",
+		$hash->{"LIGHT$np"}, $hue2,255,$bri;
 
 	$hash->{STATE} = "alternating ($ph)";
-	fhem("set $dev1 pct $pct : hue $col1 $ttime");
-	fhem("set $dev2 pct $pct : hue $col2 $ttime");
-	Log3($name, 5, "RCo($name): set $dev1 pct $pct : hue $col1 $ttime");
-	Log3($name, 5, "RCo($name): set $dev2 pct $pct : hue $col2 $ttime");
+	fhem($cmd1);
+	fhem($cmd2);
+	Log3($name, 5, "RCo($name): $cmd1");
+	Log3($name, 5, "RCo($name): $cmd2");
+
 	RemoveInternalTimer($hash, "RColor_switch");
 	InternalTimer(gettimeofday() + $ktime, "RColor_switch", $hash);
 	Log3($name, 4, "RCo($name): switched, next ".FmtDateTime(gettimeofday() + $ktime));
