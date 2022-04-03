@@ -18,7 +18,7 @@ use Color;
 my %RColor_attrs = (
 	keeptime		=> { type=>"u", dflt=> 300 },
 	transitiontime	=> { type=>"u", dflt=> 10 },
-	max_bri			=> { type=>"%", dflt=> 255 },
+	max_bri			=> { type=>"b", dflt=> 255 },
 	sunset_offset   => { type=>"i", dflt=> -30*60 },
 	midnight_offset => { type=>"i", dflt=> -10*60 },
 );
@@ -102,6 +102,11 @@ sub RColor_Attr($@)
 			return "Is not a valid number between 0 and 100: $val"
 				if $val !~ /^\d+$/ ||
 				   $val < 0 || $val > 100;
+		}
+		elsif ($t eq "b") {
+			return "Is not a valid number between 0 and 255: $val"
+				if $val !~ /^\d+$/ ||
+				   $val < 0 || $val > 255;
 		}
 	}
 	return undef;
