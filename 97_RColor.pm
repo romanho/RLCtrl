@@ -210,7 +210,7 @@ sub RColor_switch($)
 	my $col2 = int($hash->{COL2} * 65536);
 	Log3($name, 4, "RCo($name): ph=$ph bri=$bri");
 
-	my $ttime = RCattr($name, "transitiontime");
+	my $ttime = RCattr($name, "transitiontime") * 10;
 	my $ktime = RCattr($name, "keeptime");
 
 	$hash->{STATE} = "alternating ($ph)";
