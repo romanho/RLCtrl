@@ -139,7 +139,7 @@ sub RColor_start($)
 	return if $hash->{PHASE} ne "off";
 	
 	my $dow = (localtime(time))[6];
-	my $hue = (3.0*$dow/7 * 65536) % 32768;
+	my $hue = (2.0*$dow/7 * 65536) % 32768;
 	$hue /= 65536;
 	my $mn_off = RCattr($name, "midnight_offset");
 	my $max_bri = RCattr($name, "max_bri");
@@ -153,8 +153,8 @@ sub RColor_start($)
 	$hash->{BRIFACTOR} = $max_bri / $minutes_on;
 	$hash->{STARTTIME} = time;
 	
-	Log3($name, 4, sprintf "RCo($name): turned on, hues: %d %d",
-		 int($hash->{COL1}*65536), int($hash->{COL2}*65536));
+	Log3($name, 4, sprintf "RCo($name): turned on, hues: %.1f° %.1f°",
+		 int($hash->{COL1}*360), int($hash->{COL2}*360));
 	
 	RColor_switch($hash);
 }
