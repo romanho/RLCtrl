@@ -5,7 +5,7 @@ use warnings;
 #
 # ----------------------------------------------------------------------
 # Tanken
-# 
+#
 
 # damit die Funktion richtig funktioniert müssen alle Tankstellennamen mit 
 # "Tankstelle_" beginnen oder entsprechend devspec2array auf die eigenen
@@ -90,8 +90,22 @@ sub my_do_air($) {
 
 # 
 # ----------------------------------------------------------------------
-# Fensteralarm
+# Fenster
 # 
+
+sub my_window_since($)
+{
+	my ($name) = @_;
+
+	if (ReadingsVal($name, "state", "") eq "open") {
+		my $age = ReadingsAge($name,"state",undef);
+		return "< 1 min" if ($age < 60);
+		return sprintf "%d min", int($age/60);
+	}
+	else {
+		return "-";
+	}
+}
 
 sub my_window_alarm($)
 {
