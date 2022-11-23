@@ -365,6 +365,11 @@ sub RLCtrl_doset($$$$)
 	my $name = $hash->{NAME};
 	my $ldev = $hash->{LIGHTDEV};
 
+	# do nothing if parameters didn't change, to avoid potential flickering if
+	# there's more than one motion sensor
+	return if ($bri eq ReadingsVal($name, "pct", 0) &&
+			   (!$ct || $ct eq ReadingsVal($name, "ct", 0)));
+	
 	fhem("set $ldev ".($bri ? ($ct ? "ct $ct : " : "")."pct $bri : on" : "off"))
 		if $ldev;
 
