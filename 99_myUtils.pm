@@ -57,6 +57,7 @@ my $wi_movetime = 30;
 
 sub my_air_duration() {
 	my $temp = ReadingsVal("weather", "temperature", 10);
+	my $wind = ReadingsVal("weather", "wind", 0);
 	my $weather = ReadingsVal("weather", "weather", "");
 	my $mins = 1;
 
@@ -68,7 +69,17 @@ sub my_air_duration() {
 	elsif ($temp <= 20) { $mins = 30; }
 	else                { $mins = 45; }
 
-	$mins += 2 if $weather eq "sonnig";
+	# longer if cold but sunny:
+	$mins += 3 if $mins < 10 && $weather eq "sonnig";
+
+	# limit time if stormy:
+	if ($wind >= 55) {
+		$mins = 3 if $mins >= 3;
+	}
+	elsif ($wind >= 35) {
+		$mins /= 2 if $mins > 10;
+		$mins = 8 if $mins >= 8;
+	}
 
 	return $mins;
 }
