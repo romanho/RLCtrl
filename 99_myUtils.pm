@@ -13,9 +13,9 @@ use warnings;
 
 sub Tanken_get($$) {
 	my ($name, $kind) = @_;
-	my $high= 9999;
+	my $high = 9999;
 	my $v = ReadingsNum($name, $kind, $high);
-	if ($v != $high && ReadingsAge($name, $kind, 1000) > 2*24*3600) {
+	if ($v != $high && ReadingsVal($name, "age", 0) > 2) {
 		$v = $high;
 	}
 	return $v;
