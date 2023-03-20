@@ -168,8 +168,7 @@ sub RLCtrl_Set_single($@)
 		return RLCtrl_manbri($hash, shift @$args);
 	}
 	elsif ($cmd eq "auto") {
-		RLCtrl_auto($hash);
-		return undef;
+		return RLCtrl_auto($hash);
 	}
 	elsif ($cmd eq "for") {
 		return "set $name for needs a numeric argument"
@@ -249,6 +248,7 @@ sub RLCtrl_auto($)
 	$hash->{MODECHANGE} = time();
 	RemoveInternalTimer($hash, "RLCtrl_autoTimer");
 	RLCtrl_exec($hash);
+	return undef;
 }
 
 sub RLCtrl_Get($@)
