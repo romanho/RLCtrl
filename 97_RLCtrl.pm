@@ -151,6 +151,18 @@ sub RLCtrl_Set_single($@)
 		my $bri = ReadingsVal($name, "pct", 0);
 		return RLCtrl_manbri($hash, $bri > 0 ? 0 : 100);
 	}
+	elsif ($cmd eq "cycle") {
+		my $bri = ReadingsVal($name, "pct", 0);
+		if ($hash->{MODE} eq "auto") {
+			return RLCtrl_manbri($hash, 100);
+		}
+		elsif ($bri > 0) {
+			return RLCtrl_manbri($hash, 0);
+		}
+		else {
+			return RLCtrl_auto($hash);
+		}
+	}
 	elsif ($cmd eq "dimUp") {
 		my $d = (@$args && $args->[0] =~ /^\d+$/) ? shift @$args : 10;
 		return RLCtrl_manbri($hash, $d, 1);
@@ -214,7 +226,7 @@ sub RLCtrl_Set_single($@)
 	}
 	
 	# usage for GUI:
-	return "Unknown argument $cmd, choose one of auto for on off toggle dimUp dimDown dim:0,10,20,30,40,50,60,70,80,90,100 coltemp:2700,3800,5000,auto scene ".join(" ", keys %{$hash->{SCENES}});
+	return "Unknown argument $cmd, choose one of auto for on off toggle cycle dimUp dimDown dim:0,10,20,30,40,50,60,70,80,90,100 coltemp:2700,3800,5000,auto scene ".join(" ", keys %{$hash->{SCENES}});
 }
 
 sub RLCtrl_manbri($$;$)
