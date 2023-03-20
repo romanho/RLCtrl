@@ -61,7 +61,8 @@ sub my_air_duration() {
 	my $weather = ReadingsVal("weather", "weather", "");
 	my $mins = 1;
 
-	   if ($temp <=  0) { $mins =  3; }
+	   if ($temp <= -4) { $mins =  1; }
+	elsif ($temp <=  0) { $mins =  2; }
 	elsif ($temp <=  5) { $mins =  5; }
 	elsif ($temp <= 10) { $mins =  8; }
 	elsif ($temp <= 14) { $mins = 12; }
