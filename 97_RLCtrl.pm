@@ -1,13 +1,17 @@
 # $Id: $
 
+# TODO:
+# - With multiple sensors, if the sensor signals motion that doesn't provide
+#   the lux value, then the other sensors (with light value) probably hasn't
+#   sent a lux update yet. So calculation might be wrong based on an old light
+#   level.
+
 package main;
 
 use strict;
 use warnings;
 
 use POSIX;
-#use Color;
-#use SetExtensions;
 
 my %RLCtrl_attrs = (
 	motionOnTime		=> { type=>"u", dflt=> 240 },
